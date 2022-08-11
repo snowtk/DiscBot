@@ -7,6 +7,9 @@ const commands = [
   {
     name: 'ping',
     description: 'Replies with Pong!',
+  },{
+    name: 'beg',
+    description:'beg ecila for pennies'
   },
 ];
 
