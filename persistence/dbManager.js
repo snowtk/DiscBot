@@ -1,4 +1,5 @@
 import sqlite3 from 'sqlite3';
+import {discordUser} from '../models/discordUser.js'
 
 let db = new sqlite3.Database('./persistence/discbot.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
     if (err && err.code == "SQLITE_CANTOPEN") {
@@ -11,9 +12,16 @@ let db = new sqlite3.Database('./persistence/discbot.db', sqlite3.OPEN_READWRITE
   });
 
 export async function addCash(user, cash){
-  console.log(user);
   console.log("adding " + user.cash + " " + cash + " cash to " + user.name + user.id)
   db.run(`UPDATE 'users' SET cash = '${user.cash + cash}' WHERE id = '${user.id}'`, function(value, err){
+    if (err) {
+      return console.error(err.message);
+    }
+  });
+}
+
+export async function updateCooldown(user, field, unixCooldown){
+  db.run(`UPDATE 'cooldowns' SET ${field} = '${unixCooldown}' WHERE userId = '${user.id}'`, function(value, err){
     if (err) {
       return console.error(err.message);
     }
@@ -26,7 +34,7 @@ export async function registerUser(id, interaction, callback = () => {}, errorCa
       if (err) {
         return console.error(err.message);
       }
-      callback(interaction, {id, name: interaction.user.username, cash: 0});
+      callback(new discordUser(id, interaction.user.username, 0, interaction));
     });
 }
 
@@ -40,9 +48,13 @@ export async function getUserById(id, interaction, callback = () => {}, errorCal
         if (err) {
           return console.error(err.message);
         }
-        console.log(row);
-        return row
-        ? callback(interaction, row)
-        : registerUser(id,interaction,callback,errorCallback);
+        if(row){
+          let user = new discordUser(row.id,row.name,row.cash, interaction);
+          user.cooldowns["jobAction"] = row.jobAction;
+          console.log(user);
+          callback(user);
+        }else{
+          registerUser(id,interaction,callback,errorCallback);
+        }
     });
 }

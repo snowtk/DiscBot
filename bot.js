@@ -1,6 +1,8 @@
 import fetch from 'node-fetch'
 import dotenv from 'dotenv'
 import * as db from './persistence/dbManager.js'
+import {discordUser} from './models/discordUser.js'
+import * as enums from './models/enums.js'
 import {keepAlive} from "./server.js"
 import { Client, GatewayIntentBits, EmbedBuilder} from 'discord.js'
 
@@ -16,6 +18,8 @@ const token = process.env['token'];
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  const Guilds = client.guilds.cache.map(guild => guild);
+    console.log(Guilds);
 });
 
 client.on('interactionCreate', async interaction => {
@@ -29,15 +33,20 @@ client.on('interactionCreate', async interaction => {
   if (interaction.commandName === 'beg') {
     console.log(interaction.user.username + "(" + interaction.user.id + ") begged for cash")
     await interaction.deferReply();
+    interaction.user.displayAvatarURL
     db.getUserById(interaction.user.id, interaction, beg);
   }
 });
 
-async function beg(interaction, user){
+async function beg(user){
   //console.log(interaction.user);
-  let cash = Math.floor(0 + Math.random() * 5);
-  db.addCash(user,cash)
-  let userAvatar = interaction.user.displayAvatarURL({ size: 32, dynamic: true });
+  if(!user.canAct(enums.Actions.beg.CooldownField)){
+    let secondsLeft = user.SecondsUntilCanAct(enums.Actions.beg.CooldownField);
+    await user.interaction.editReply(`${Math.round(secondsLeft/60)} minutes until you can beg again.`);
+    return;
+  }
+  let cash = user.beg();
+  let userAvatar = user.interaction.user.displayAvatarURL({ size: 32, dynamic: true });
   let exampleEmbed = new EmbedBuilder()
     .setColor(0x9d3dd4)
     .setTitle("Begging")
@@ -45,12 +54,12 @@ async function beg(interaction, user){
     .setDescription(`${user.name} begged for pennies and received **${cash}** EcilaCoins.`)
     .setImage('https://cdn2.iconfinder.com/data/icons/people-need-help/49/people-04-512.png')
     //.setThumbnail('https://cdn2.iconfinder.com/data/icons/people-need-help/49/people-04-512.png')
-    .addFields({ name: `${user.name} Total Cash`, value: `${user.cash+cash}`, inline: true })
+    .addFields({ name: `${user.name} Total Cash`, value: `${user.cash}`, inline: true })
     .setTimestamp()
     .setFooter({ text: `${user.name}`, iconURL: `${userAvatar}` });
   //interaction.user.toString() + " won " + cash + " EcilaCoins\nNew balance:" + (user.cash+cash)
   
-  await interaction.editReply({ embeds: [exampleEmbed] });
+  await user.interaction.editReply({ embeds: [exampleEmbed] });
 }
 
 
