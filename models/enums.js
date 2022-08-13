@@ -1,6 +1,4 @@
 export const Actions = {
-	beg: {cooldown: 60*15, CooldownField: "jobAction"},
-	Autumn: 1,
-	Winter: 2,
-	Spring: 3
+	beg: {cooldown: 60*1, CooldownField: "jobAction"},
+	chatActivity: {cooldown: 60*5, CooldownField: "chatActivityAction"},
 }
