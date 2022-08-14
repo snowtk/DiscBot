@@ -1,19 +1,25 @@
 import sqlite3 from 'sqlite3';
 import {discordUser} from '../models/discordUser.js'
 import { Actions } from '../models/enums.js';
+import * as chalkThemes from '../models/chalkThemes.js'
+import * as logger from '../models/logger.js'
+
+function log(message, ...params){
+  logger.log(chalkThemes.database(message), ...params);
+}
 
 let db = new sqlite3.Database('./persistence/discbot.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
     if (err && err.code == "SQLITE_CANTOPEN") {
         return;
         } else if (err) {
-            console.log("Getting error " + err);
+            log(chalkThemes.error("Getting error " + err));
             exit(1);
     }
-    console.log("Connected to the database")
+    log(chalkThemes.setup("Connected"))
   });
 
 export async function addCash(user, cash){
-  console.log("adding " + user.cash + " " + cash + " cash to " + user.name + user.userId)
+  log(`Adding ${cash} coins to ${user.name}, new total: ${cash+user.cash}`);
   db.run(`UPDATE 'users' SET cash = '${user.cash + cash}' WHERE id = '${user.userId}'`, function(value, err){
     if (err) {
       return console.error(err.message);
@@ -30,7 +36,7 @@ export async function updateCooldown(user, field, unixCooldown){
 }
 
 export async function registerUser(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-    console.log(`registering user ${interaction.user.username} with discord id:${interaction.user.id} and guild id:${interaction.guild.id}`);
+  log(`Registering user ${interaction.user.username}, ID:${interaction.user.id}, Guild ID:${interaction.guild.id}`);
     db.run(`INSERT INTO users(discordUserId, discordGuildId, guildName, name, cash) VALUES(?, ?, ?, ?, ?)`,
      [interaction.user.id,interaction.guild.id, interaction.guild.name, interaction.user.username, 0], function(value, err){
       if (err) {
@@ -41,7 +47,7 @@ export async function registerUser(interaction, callback = () => {}, hook = () =
 }
 
 export async function getUser(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-    console.log(`asking bd for the user with id ${interaction.user.id} and guild id ${interaction.guild.id}`);
+    log(`Requesting user with ID:${interaction.user.id} and Guild ID:${interaction.guild.id}`);
     
     let sql = `SELECT *
                 FROM usercd
@@ -56,7 +62,7 @@ export async function getUser(interaction, callback = () => {}, hook = () => {},
           for (const [key, value] of Object.entries(Actions)) {
             user.cooldowns[value.CooldownField] = row[value.CooldownField];
           }
-          console.log(user);
+          //log(user);
           hook(user, interaction, callback);
         }else{
           registerUser(interaction,callback, hook, errorCallback);
@@ -66,8 +72,7 @@ export async function getUser(interaction, callback = () => {}, hook = () => {},
 
 
 export async function getUserFromMessage(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-  console.log(`asking bd for the user with id ${interaction.author.id} and guild id ${interaction.guildId}`);
-  
+  log(`Requesting user with ID:${interaction.author.id} and Guild ID:${interaction.guildId}`);
   let sql = `SELECT *
               FROM usercd
               WHERE userId  = "${interaction.author.id}"
@@ -89,7 +94,7 @@ export async function getUserFromMessage(interaction, callback = () => {}, hook 
 }
 
 export async function registerUserFromMessage(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-  console.log(`registering user ${interaction.author.username} with discord id:${interaction.author.id} and guild id:${interaction.guildId}`);
+  log(`Registering user ${interaction.author.username}, ID:${interaction.author.id}, Guild ID:${interaction.guildId}`);
   db.run(`INSERT INTO users(discordUserId, discordGuildId, name, cash) VALUES(?, ?, ?, ?)`,
    [interaction.author.id,interaction.guildId, interaction.author.username, 0], function(value, err){
     if (err) {
@@ -100,6 +105,7 @@ export async function registerUserFromMessage(interaction, callback = () => {}, 
 }
 
 export async function getRichestUsers(interaction, callback = () => {}, errorCallback = () => {}){
+  log(`Retreiving richest users`);
   let sql = `select name, cash from users where discordguildid = '${interaction.guild.id}'  order by cash desc limit 15`;
   db.all(sql, (err, rows) => { 
       if (err) {
@@ -111,20 +117,19 @@ export async function getRichestUsers(interaction, callback = () => {}, errorCal
 
 //select * from users order by cash desc limit 3
 export async function getGuilds(cachedGuilds, callback = () => {}, errorCallback = () => {}){
-    console.log("loading guilds");   
     let sql = `SELECT cast(id as text) as id, name, coinEmote
                 FROM guilds`;
     db.all(sql, (err, rows) => { 
         if (err) {
           return console.error(err.message);
         }
-        //console.log(rows);
+        //log(rows);
         callback(cachedGuilds,rows);
     });
 }
 
 export async function registerGuild(guild, callback = () => {}, errorCallback = () => {}){
-  console.log(`registering guild ${guild.name}`);
+  log(`Registering guild ${guild.name}|${guild.id}`);
   db.run(`INSERT INTO guilds(id, name) VALUES(?, ?)`,
    [guild.id, guild.name], function(value, err){
     if (err) {

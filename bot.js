@@ -4,10 +4,17 @@ import * as db from './persistence/dbManager.js'
 import {discordUser, getUnixTime} from './models/discordUser.js'
 import {discordGuild} from './models/discordGuild.js'
 import * as enums from './models/enums.js'
-import {keepAlive} from "./server.js"
+import * as expressServer from "./server.js"
 import { Client, GatewayIntentBits, EmbedBuilder} from 'discord.js'
+import * as chalkThemes from './models/chalkThemes.js'
+import * as logger from './models/logger.js'
+import * as readline from 'readline'
 
 dotenv.config()
+
+function log(message, ...params){
+  logger.log(chalkThemes.main(message), ...params);
+}
 
 const allIntents = 131071;
 const client = new Client({ intents: allIntents });
@@ -16,34 +23,34 @@ let guilds = {};
 let users = {};
 let userCacheSize = 100;
 
+log(chalkThemes.setup(`--------------------- INIT -----------------------`));
 client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+  log(chalkThemes.setup(`Logged in as ${client.user.tag}!`));
   db.getGuilds(client.guilds.cache.map(guild => guild), validadeGuilds);
 });
 
 async function validadeGuilds(cachedGuilds,dbGuilds){
+  log(chalkThemes.setup(`Loading guilds`));
   let dbDict = Object.assign({}, ...dbGuilds.map((x) => ({[x.id]: x})));
-  //console.log(cachedGuilds);
+  //log(cachedGuilds);
   for(var i = 0; i < cachedGuilds.length; i++){
     if(dbDict[cachedGuilds[i].id]){
       let dbGuild= dbDict[cachedGuilds[i].id];
-      guilds[cachedGuilds[i].id] = new discordGuild(dbGuild.id, dbGuild.coinEmote);
+      guilds[cachedGuilds[i].id] = new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote);
       guilds[cachedGuilds[i].id].guild = cachedGuilds[i];
     }else{
       db.registerGuild(cachedGuilds[i]);
-      guilds[cachedGuilds[i].id] = new discordGuild(cachedGuilds[i].id);
+      guilds[cachedGuilds[i].id] = new discordGuild(cachedGuilds[i].id, cachedGuilds[i].name);
       guilds[cachedGuilds[i].id].guild = cachedGuilds[i];
     }
   }
+  log(chalkThemes.setup(`--------------------------------------------------`));
 }
 
 client.on('interactionCreate', async interaction => {
-  //console.log(interaction);
+  //log(interaction);
   if (!interaction.isChatInputCommand()) return;
-
-  if (interaction.commandName === 'ping') {
-    await interaction.reply('Pong!');
-  }
+  log(`${interaction.user.username} used command: ${chalkThemes.warning(interaction.commandName)}`)
 
   if (interaction.commandName === 'top_rich') {
     await interaction.deferReply();
@@ -57,12 +64,11 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (interaction.commandName === 'beg') {
-    console.log(interaction.user.username + "(" + interaction.user.id + ") begged for cash")
     await interaction.deferReply();
     if(users[(interaction.user.id, interaction.guild.id)]){
-      addUserToCache(users[(interaction.user.id, interaction.guild.id)], interaction, beg);
+      userFound(users[(interaction.user.id, interaction.guild.id)], interaction, beg);
     }else{
-      db.getUser(interaction, beg, addUserToCache);
+      db.getUser(interaction, beg, userFound);
     }
     
   }
@@ -82,11 +88,12 @@ async function topRichest(userList, interaction){
   await interaction.editReply({ embeds: [exampleEmbed] });
 }
 
-async function addUserToCache(user, interaction, callback = () =>{}){
+async function userFound(user, interaction, callback = () =>{}){
   user.lastRequest = getUnixTime();
   user.setInteraction(interaction); 
-  if(!users[(user.discordId, user.guildId)]){
-      users[(user.discordId, user.guildId)] = user;
+
+  if(!users[user.discordId + user.guildId]){
+      users[user.discordId + user.guildId] = user;
   }
   if(Object.keys(users).length > userCacheSize){
     var keys   = Object.keys(users);
@@ -98,7 +105,7 @@ async function addUserToCache(user, interaction, callback = () =>{}){
 }
 
 async function beg(user){
-  //console.log(interaction.user);
+  //log(interaction.user);
   if(!user.canAct(enums.Actions.beg.CooldownField)){
     let secondsLeft = user.SecondsUntilCanAct(enums.Actions.beg.CooldownField);
     await user.interaction.editReply(`${Math.round(secondsLeft/60)} minutes until you can beg again.`);
@@ -122,10 +129,11 @@ async function beg(user){
 }
 
 async function activityReward(user){
-  //console.log(interaction.user);
+  //log(interaction.user);
   if(!user.canAct(enums.Actions.chatActivity.CooldownField)){
     return;
   }
+  log(`${user.name} is eligible for activity token reward`);
   user.getActivityReward();
   let coinEmoji = "🪙";
   if(guilds[user.guildId].guild.emojis.cache.find(emoji => emoji.toString() === guilds[user.guildId].coinEmote)){
@@ -135,19 +143,25 @@ async function activityReward(user){
 }
 
 client.on('messageCreate', (interaction) => {
-  //console.log(interaction);
+  //log(interaction);
   if(interaction.author.bot) return;
-  console.log(`${interaction.author.username} talked in ${interaction.guildId}`);
-  if(users[(interaction.author.id, interaction.guildId)]){
-    addUserToCache(users[(interaction.author.id, interaction.guildId)], interaction, activityReward);
+  log(`${interaction.author.username} talked in ${interaction.guildId}`);
+  //log(users[interaction.author.id+interaction.guildId]);
+  if(users[interaction.author.id+interaction.guildId]){
+    log(`${interaction.author.username} in cache`);
+    userFound(users[interaction.author.id+interaction.guildId], interaction, activityReward);
   }else{
-    db.getUserFromMessage(interaction, activityReward, addUserToCache);
-  }
-  if(interaction.content.includes("PogU")){
-    interaction.reply("<:PogU:477220692887076874>");
+    log(`Getting ${interaction.author.username} from database`)
+    db.getUserFromMessage(interaction, activityReward, userFound);
   }
 });
 //messageCreate
 
-keepAlive();
+expressServer.server.all("/users/", (req, res) => {
+  res.send("<pre><code>" + JSON.stringify(users, null, '  ')+"</code></pre>")
+})
+expressServer.server.all("/guilds/", (req, res) => {
+  res.send("<pre><code>" + JSON.stringify(guilds, null, '  ')+"</code></pre>")
+})
+expressServer.keepAlive();
 client.login(token);

@@ -1,6 +1,8 @@
 import express from 'express'
+import * as chalkThemes from './models/chalkThemes.js'
+import {log} from './models/logger.js'
 
-const server = express()
+export const server = express()
 
 server.all("/", (req, res) => {
   res.send("Bot is running!")
@@ -8,6 +10,6 @@ server.all("/", (req, res) => {
 
 export function keepAlive() {
   server.listen(3000, () => {
-    console.log("Server is ready.")
+    log(chalkThemes.setup("Web Server is ready."))
   })
 }

@@ -1,9 +1,12 @@
 import * as db from '../persistence/dbManager.js'
 import * as enums from './enums.js'
+import * as logger from './logger.js'
+import * as chalkThemes from '../models/chalkThemes.js'
 
 export function getUnixTime() {
     return Math.floor(Date.now() / 1000);
 }
+
 export class discordUser{
     constructor(userId, discordId, guildId, name, cash, interaction) {
         this.userId = userId;
@@ -14,12 +17,18 @@ export class discordUser{
         this.cooldowns = {};
         this.interaction = interaction;
       }
-    
+      
+    log(message, ...params){
+        logger.log(chalkThemes.internal(this,message), ...params);
+    }
+
     setInteraction(interaction){
         this.interaction = interaction;
     }
 
     addCash(cash){
+        if(cash <= 0) return;
+        this.log(`Adding ${cash} coins to ${this.name}, ${this.cash} + ${cash} = ${this.cash+cash}`);
         db.addCash(this, cash);
         this.cash += cash;
     }
