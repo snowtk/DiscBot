@@ -3,6 +3,7 @@ import {discordUser} from '../models/discordUser.js'
 import { Actions } from '../models/enums.js';
 import * as chalkThemes from '../models/chalkThemes.js'
 import * as logger from '../models/logger.js'
+import { Resolver } from 'dns';
 
 function log(message, ...params){
   logger.log(chalkThemes.database(message), ...params);
@@ -35,73 +36,46 @@ export async function updateCooldown(user, field, unixCooldown){
   });
 }
 
-export async function registerUser(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-  log(`Registering user ${interaction.user.username}, ID:${interaction.user.id}, Guild ID:${interaction.guild.id}`);
-    db.run(`INSERT INTO users(discordUserId, discordGuildId, guildName, name, cash) VALUES(?, ?, ?, ?, ?)`,
-     [interaction.user.id,interaction.guild.id, interaction.guild.name, interaction.user.username, 0], function(value, err){
+export async function registerUser(userId, username, guildId){
+  return new Promise(function(resolve,reject) {
+    log(`Registering user ${username}, ID:${userId}, Guild ID:${guildId}`);
+    db.run(`INSERT INTO users(discordUserId, discordGuildId, name, cash) VALUES(?, ?, ?, ?)`,
+     [userId, guildId, username, 0], function(value, err){
       if (err) {
-        return console.error(err.message);
+        reject(console.error(err.message));
       }
-      getUser(interaction, callback, hook);
+      getUser(userId,  guildId).then((user)=> {resolve(user);});
     });
+  })
 }
 
-export async function getUser(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-    log(`Requesting user with ID:${interaction.user.id} and Guild ID:${interaction.guild.id}`);
+export async function getUser(userId, guildId){
+    return new Promise(function(resolve,reject) {
+      log(`Requesting user with ID:${userId} and Guild ID:${guildId}`);
     
-    let sql = `SELECT *
-                FROM usercd
-                WHERE userId  = "${interaction.user.id}"
-                and guildId = "${interaction.guild.id}"`;
-    db.get(sql, (err, row) => { 
-        if (err) {
-          return console.error(err.message);
-        }
-        if(row){
-          let user = new discordUser(row.id, row.userId, row.guildId, row.name, row.cash, interaction);
-          for (const [key, value] of Object.entries(Actions)) {
-            user.cooldowns[value.CooldownField] = row[value.CooldownField];
+      let sql = `SELECT *
+                  FROM usercd
+                  WHERE userId  = "${userId}"
+                  and guildId = "${guildId}"`;
+      db.get(sql, (err, row) => { 
+          if (err) {
+            return console.error(err.message);
           }
-          //log(user);
-          hook(user, interaction, callback);
-        }else{
-          registerUser(interaction,callback, hook, errorCallback);
-        }
-    });
-}
-
-
-export async function getUserFromMessage(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-  log(`Requesting user with ID:${interaction.author.id} and Guild ID:${interaction.guildId}`);
-  let sql = `SELECT *
-              FROM usercd
-              WHERE userId  = "${interaction.author.id}"
-              and guildId = "${interaction.guildId}"`;
-  db.get(sql, (err, row) => { 
-      if (err) {
-        return console.error(err.message);
-      }
-      if(row){
-        let user = new discordUser(row.id, row.userId, row.guildId, row.name, row.cash, interaction);
-        for (const [key, value] of Object.entries(Actions)) {
-          user.cooldowns[value.CooldownField] = row[value.CooldownField];
-        }
-        hook(user, interaction, callback);
-      }else{
-        registerUserFromMessage(interaction,callback, hook, errorCallback);
-      }
-  });
-}
-
-export async function registerUserFromMessage(interaction, callback = () => {}, hook = () => {}, errorCallback = () => {}){
-  log(`Registering user ${interaction.author.username}, ID:${interaction.author.id}, Guild ID:${interaction.guildId}`);
-  db.run(`INSERT INTO users(discordUserId, discordGuildId, name, cash) VALUES(?, ?, ?, ?)`,
-   [interaction.author.id,interaction.guildId, interaction.author.username, 0], function(value, err){
-    if (err) {
-      return console.error(err.message);
-    }
-    getUserFromMessage(interaction, callback, hook);
-  });
+          if(row){
+            let user = new discordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
+            for (const [key, value] of Object.entries(Actions)) {
+              user.cooldowns[value.CooldownField] = row[value.CooldownField];
+            }
+            //log(user);
+            //hook(user, interaction, callback);
+            resolve(user);
+          }else{
+            resolve(null);
+            //registerUser(interaction).then(() => {getUser(interaction).then((user) => {resolve(user)});});
+          }
+      });
+    })
+    
 }
 
 export async function getRichestUsers(interaction, callback = () => {}, errorCallback = () => {}){

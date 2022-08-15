@@ -2,7 +2,7 @@ import * as db from '../persistence/dbManager.js'
 import * as enums from './enums.js'
 import * as logger from './logger.js'
 import * as chalkThemes from '../models/chalkThemes.js'
-
+import {begging} from './skills/begging.js'
 export function getUnixTime() {
     return Math.floor(Date.now() / 1000);
 }
@@ -32,12 +32,22 @@ export class discordUser{
         db.addCash(this, cash);
         this.cash += cash;
     }
+    removeCash(cash){
+        if(cash <= 0) return;
+        this.log(`Removing ${cash} coins from ${this.name}, ${this.cash} - ${cash} = ${this.cash-cash}`);
+        db.addCash(this, 0-cash);
+        this.cash -= cash;
+    }
+
+    giveCash(taker, amount){
+        if(amount > this.cash) return;
+        this.log(`${this.name} giving ${amount} coins to ${taker.name}`)
+        this.removeCash(amount);
+        taker.addCash(amount);
+    }
 
     beg(){
-        let cash = Math.floor(0 + Math.random() * 3);
-        this.addCash(cash);
-        this.updateCooldown(enums.Actions.beg)
-        return cash;
+        return begging(this);
     }
 
     getActivityReward(){

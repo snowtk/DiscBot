@@ -57,6 +57,17 @@ client.on('interactionCreate', async interaction => {
     db.getRichestUsers(interaction, topRichest);
   }
 
+  if (interaction.commandName === 'give_coins') {
+    await interaction.deferReply();
+    let amount = interaction.options.getInteger('amount');
+    let target =  interaction.options.getUser('target');
+    let giver = await getUser(interaction.user.id, interaction.guild.id, interaction);
+    let interactionCopy =  Object.assign({}, interaction);
+    interactionCopy.user = target;
+    let taker = await getUser(target.id, interaction.guild.id, interactionCopy);
+    giveCoins(giver,taker, amount, interaction);
+  }
+
   if (interaction.commandName === 'setcoin') {
     let newCoinName =  interaction.options.getString("currency_name");
     guilds[interaction.guild.id].setCoin(newCoinName);
@@ -65,14 +76,53 @@ client.on('interactionCreate', async interaction => {
 
   if (interaction.commandName === 'beg') {
     await interaction.deferReply();
-    if(users[(interaction.user.id, interaction.guild.id)]){
-      userFound(users[(interaction.user.id, interaction.guild.id)], interaction, beg);
-    }else{
-      db.getUser(interaction, beg, userFound);
-    }
+    getUser(interaction.user.id, interaction.guild.id, interaction).then((user) => beg(user));
     
   }
 });
+
+async function giveCoins(giver, taker, amount, interaction){
+  let description = "";
+  if(giver.cash >= amount){
+    giver.giveCash(taker, amount);
+    description = `${giver.interaction.user.toString()} has given ${amount} ${guilds[interaction.guild.id].coinEmote} to ${taker.interaction.user.toString()}`
+  }else{
+    description= `You don't have enough ${guilds[interaction.guild.id].coinEmote}`
+  }
+  let exampleEmbed = new EmbedBuilder()
+    .setColor(0x9d3dd4)
+    .setTitle(`Charity`)
+    .setDescription(description)
+    .setTimestamp();
+  
+  await interaction.editReply({ embeds: [exampleEmbed] });
+}
+
+async function getUser(userId, guildId, interaction){
+    let username = interaction.author ? interaction.author.username : interaction.user.username;
+    let user;
+    if(users[`${userId}${guildId}`]){
+      user = users[`${userId}${guildId}`];
+      log(`${user.name} already in cache`);
+    } else {
+      user = await db.getUser(userId, guildId);
+      if(!user){
+        user = await db.registerUser(userId, username, guildId);
+      }
+      log(`Adding ${user.name} to cache`);
+      users[`${userId}${guildId}`] = user;
+    }
+    user.lastRequest = getUnixTime();
+    user.setInteraction(interaction);
+
+    if(Object.keys(users).length > userCacheSize){
+      var keys   = Object.keys(users);
+      var lowest = Math.min.apply(null, keys.map(function(x) { return users[x].lastRequest} ));
+      var match  = keys.filter(function(y) { return users[y].lastRequest === lowest });
+      delete users[match];
+    }
+    return user;
+}
 
 async function topRichest(userList, interaction){
   let list = "";
@@ -86,22 +136,6 @@ async function topRichest(userList, interaction){
     .setTimestamp();
   
   await interaction.editReply({ embeds: [exampleEmbed] });
-}
-
-async function userFound(user, interaction, callback = () =>{}){
-  user.lastRequest = getUnixTime();
-  user.setInteraction(interaction); 
-
-  if(!users[user.discordId + user.guildId]){
-      users[user.discordId + user.guildId] = user;
-  }
-  if(Object.keys(users).length > userCacheSize){
-    var keys   = Object.keys(users);
-    var lowest = Math.min.apply(null, keys.map(function(x) { return users[x].lastRequest} ));
-    var match  = keys.filter(function(y) { return users[y].lastRequest === lowest });
-    delete users[match];
-  }
-  callback(user);
 }
 
 async function beg(user){
@@ -118,8 +152,8 @@ async function beg(user){
     .setTitle("Begging")
     //.setAuthor({ name: user.name, iconURL: userAvatar })
     .setDescription(`${user.name} begged for pennies and received **${cash}** ${guilds[user.guildId].coinEmote}.`)
-    .setImage('https://cdn3.iconfinder.com/data/icons/human-trafficking/236/human-traffiking-trade-003-512.png')
-    //.setThumbnail('https://cdn2.iconfinder.com/data/icons/people-need-help/49/people-04-512.png')
+    //.setImage('https://cdn3.iconfinder.com/data/icons/human-trafficking/236/human-traffiking-trade-003-512.png')
+    .setThumbnail('https://cdn3.iconfinder.com/data/icons/human-trafficking/236/human-traffiking-trade-003-512.png')
     .addFields({ name: `${user.name} Total Cash`, value: `${user.cash} ${guilds[user.guildId].coinEmote}`, inline: true })
     .setTimestamp()
     .setFooter({ text: `${user.name}`, iconURL: `${userAvatar}` });
@@ -142,18 +176,12 @@ async function activityReward(user){
   await user.interaction.react(coinEmoji);
 }
 
-client.on('messageCreate', (interaction) => {
+client.on('messageCreate', async (interaction) => {
   //log(interaction);
   if(interaction.author.bot) return;
   log(`${interaction.author.username} talked in ${interaction.guildId}`);
-  //log(users[interaction.author.id+interaction.guildId]);
-  if(users[interaction.author.id+interaction.guildId]){
-    log(`${interaction.author.username} in cache`);
-    userFound(users[interaction.author.id+interaction.guildId], interaction, activityReward);
-  }else{
-    log(`Getting ${interaction.author.username} from database`)
-    db.getUserFromMessage(interaction, activityReward, userFound);
-  }
+  let author = await getUser(interaction.author.id, interaction.guildId, interaction);
+  activityReward(author);
 });
 //messageCreate
 
