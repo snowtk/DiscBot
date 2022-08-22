@@ -1,5 +1,4 @@
-import * as path from 'path'
-export function log(message, ...params){
-    let date = new Date();
-    console.log(date.toLocaleTimeString('en-GB') + ": " + message, ...params);
-  }
+export function log(message, ...params) {
+  let date = new Date();
+  console.log(date.toLocaleTimeString('en-GB') + ": " + message, ...params);
+}
