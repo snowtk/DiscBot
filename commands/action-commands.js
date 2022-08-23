@@ -1,4 +1,5 @@
-import { CommandName } from "../models/enums.js"
+import { EmbedBuilder } from "discord.js";
+import { Color, CommandName } from "../models/enums.js"
 import { CacheHandler } from "../persistence/cache/cache-handler.js"
 import * as db from '../persistence/dbManager.js'
 const cache = new CacheHandler().getInstance();
@@ -7,6 +8,8 @@ const users = cache.users;
 const begAction = () => {
 
 }
+
+
 const setCoinAction = async (interaction, guilds) => {
     let newCoinName = interaction.options.getString("currency_name");
     guilds[interaction.guild.id].setCoin(newCoinName);
@@ -14,7 +17,8 @@ const setCoinAction = async (interaction, guilds) => {
     await interaction.reply(`${newCoinName} is the new currency in ${interaction.guild.name}`);
 }
 
-const topRichAction = (interaction) => {
+const topRichAction = async (interaction) => {
+    await interaction.deferReply();
     db.getRichestUsers(interaction, topRichest);
 }
 
@@ -25,7 +29,7 @@ async function topRichest(userList, interaction) {
         list += `**#${i + 1} - ${userList[i].name}** - ${userList[i].cash} ${guilds[interaction.guild.id].coinEmote}\n`
     }
     let exampleEmbed = new EmbedBuilder()
-        .setColor(enums.Color.purple)
+        .setColor(Color.purple)
         .setTitle(`TOP ${userList.length} RICHEST`)
         .setDescription(list)
         .setTimestamp();

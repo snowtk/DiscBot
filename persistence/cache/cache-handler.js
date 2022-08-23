@@ -23,6 +23,10 @@ class Cache {
         this.users[`${userId}${guildId}`] = user;
     }
 
+    addGuildToCache(guildId, guild) {
+        this.guilds[`${guildId}`] = guild;
+    }
+
     //TODO implemment in guilds
     #cacheIsFull(cache) {
         if (Object.keys(cache).length > this._maximunSize) {
@@ -38,6 +42,7 @@ class Cache {
     userCacheIsFull() {
         this.#cacheIsFull(this.users)
     }
+
 }
 
 

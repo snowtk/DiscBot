@@ -2,6 +2,7 @@ import { CacheHandler } from "../persistence/cache/cache-handler.js";
 import { discordUser } from "./discordUser.js";
 import * as logger from "./logger.js";
 import * as chalkThemes from "./chalkThemes.js";
+import { discordGuild } from "./discordGuild.js";
 
 const cache = new CacheHandler().getInstance();
 
@@ -39,4 +40,22 @@ export async function getUser(userId, guildId, interaction) {
     cache.userCacheIsFull();
 
     return user;
+}
+
+export async function validadeGuilds(cachedGuilds, dbGuilds) {
+    log(chalkThemes.setup(`Loading guilds`));
+    let dbDict = Object.assign({}, ...dbGuilds.map((x) => ({ [x.id]: x })));
+
+    for (var i = 0; i < cachedGuilds.length; i++) {
+        if (dbDict[cachedGuilds[i].id]) {
+            let dbGuild = dbDict[cachedGuilds[i].id];
+            cache.addGuildToCache(cachedGuilds[i].id, new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]))
+            //guilds[cachedGuilds[i].id] = new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]);
+        } else {
+            db.registerGuild(cachedGuilds[i]);
+            cache.addGuildToCache(cachedGuilds[i].id, new discordGuild(cachedGuilds.id, cachedGuilds.name, null, cachedGuilds[i]))
+            //     guilds[cachedGuilds[i].id] = new discordGuild(cachedGuilds[i].id, cachedGuilds[i].name, cachedGuilds[i]);
+        }
+    }
+    log(chalkThemes.setup(`--------------------------------------------------`));
 }
