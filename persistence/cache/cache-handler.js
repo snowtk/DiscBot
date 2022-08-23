@@ -1,7 +1,8 @@
 import * as logger from "../../models/logger.js";
 import * as chalkThemes from "../../models/chalkThemes.js";
+import { getUnixTime } from "../../models/utils.js";
 
-class Cache {
+export class Cache {
 
     constructor() {
         this.users = {};
@@ -26,6 +27,10 @@ class Cache {
     addGuildToCache(guildId, guild) {
         this.guilds[`${guildId}`] = guild;
     }
+    
+    getGuildFromCache(guildId){
+        return this.guilds[`${guildId}`];
+    }
 
     //TODO implemment in guilds
     #cacheIsFull(cache) {
@@ -41,21 +46,6 @@ class Cache {
     //TODO implemment in guilds
     userCacheIsFull() {
         this.#cacheIsFull(this.users)
-    }
-
-}
-
-
-export class CacheHandler {
-
-    constructor() {
-        if (!CacheHandler.instance) {
-            CacheHandler.instance = new Cache();
-        }
-    }
-
-    getInstance() {
-        return CacheHandler.instance;
     }
 
 }

@@ -2,7 +2,7 @@ import * as db from '../persistence/dbManager.js'
 const defaultCoinName = 'coins'
 
 export class discordGuild {
-    constructor(id, name, coinEmote, guild = null) {
+    constructor(id, name, coinEmote = 'coins', guild = null) {
         this.id = id;
         this.name = name;
         this.coinEmote = coinEmote || defaultCoinName;

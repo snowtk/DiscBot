@@ -82,7 +82,7 @@ export class discordUser {
     }
 
     static async getUserFromDb(userId, guildId) {
-        return await db.getUser(userId, guildId)
+        return await db.getUserFromDb(userId, guildId)
     }
 
     static async registerUser(userId, username, guildId) {

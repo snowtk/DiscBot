@@ -3,7 +3,7 @@ import { discordUser } from '../models/discordUser.js'
 import { Actions } from '../models/enums.js';
 import * as chalkThemes from '../models/chalkThemes.js'
 import * as logger from '../models/logger.js'
-import { Resolver } from 'dns';
+import { discordGuild } from '../models/discordGuild.js';
 
 function log(message, ...params) {
   logger.log(chalkThemes.database(message), ...params);
@@ -44,12 +44,12 @@ export async function registerUser(userId, username, guildId) {
         if (err) {
           reject(console.error(err.message));
         }
-        getUser(userId, guildId).then((user) => { resolve(user); });
+        getUserFromDb(userId, guildId).then((user) => { resolve(user); });
       });
   })
 }
 
-export async function getUser(userId, guildId) {
+export async function getUserFromDb(userId, guildId) {
   return new Promise(function (resolve, reject) {
     log(`Requesting user with ID:${userId} and Guild ID:${guildId}`);
 
@@ -75,41 +75,70 @@ export async function getUser(userId, guildId) {
       }
     });
   })
-
 }
 
-export async function getRichestUsers(interaction, callback = () => { }, errorCallback = () => { }) {
-  log(`Retreiving richest users`);
-  let sql = `select name, cash from users where discordguildid = '${interaction.guild.id}'  order by cash desc limit 15`;
-  db.all(sql, (err, rows) => {
-    if (err) {
-      return console.error(err.message);
-    }
-    callback(rows, interaction);
-  });
+export async function getRichestUsers(interaction) {
+  return new Promise(function (resolve, reject) {
+    log(`Retreiving richest users`);
+    let sql = `select name, cash from users where discordguildid = '${interaction.guild.id}'  order by cash desc limit 15`;
+    db.all(sql, function (err, rows) {
+      if (err) {
+        reject(console.error(err.message));
+      }
+      resolve(rows);
+    });
+  })
 }
 
 //select * from users order by cash desc limit 3
-export async function getGuilds(cachedGuilds, callback = () => { }, errorCallback = () => { }) {
-  let sql = `SELECT cast(id as text) as id, name, coinEmote
+export async function getGuilds() {
+  return new Promise(function (resolve, reject) {
+    let sql = `SELECT cast(id as text) as id, name, coinEmote
                 FROM guilds`;
-  db.all(sql, (err, rows) => {
-    if (err) {
-      return console.error(err.message);
-    }
-    //log(rows);
-    callback(cachedGuilds, rows);
-  });
+    db.all(sql, function (err, rows) {
+      if (err) {
+        reject(console.error(err.message));
+      }
+      resolve(rows);
+    });
+  })
 }
 
-export async function registerGuild(guild, callback = () => { }, errorCallback = () => { }) {
-  log(`Registering guild ${guild.name}|${guild.id}`);
-  db.run(`INSERT INTO guilds(id, name) VALUES(?, ?)`,
-    [guild.id, guild.name], function (value, err) {
+export async function getGuildFromDb(guildId) {
+  return new Promise(function (resolve, reject) {
+    log(`Requesting Guild with ID:${guildId}`);
+
+    let sql = `SELECT *
+                  FROM guilds
+                  WHERE id = "${guildId}"`;
+    db.get(sql, (err, row) => {
       if (err) {
         return console.error(err.message);
       }
+      if (row) {
+        let guild = new discordGuild(row.id, row.name, null, null);
+        resolve(guild);
+      } else {
+        resolve(null);
+      }
     });
+  })
+}
+
+export async function registerGuild(guild) {
+  return new Promise(function (resolve, reject) {
+    log(`Registering guild ${guild.name}|${guild.id}`);
+    db.run(`INSERT INTO guilds(id, name) VALUES(?, ?)`,
+      [guild.id, guild.name], function (value, err) {
+        if (err) {
+          reject(console.error(err.message));
+        }
+        getGuildFromDb(guild.id).then((newGuild) => {
+          newGuild.guild = guild;
+          resolve(newGuild);
+        });
+      });
+  })
 }
 
 export async function updateGuildCoin(guild, emote) {
