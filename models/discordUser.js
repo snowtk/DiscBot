@@ -50,7 +50,7 @@ export class discordUser {
     }
 
     getActivityReward() {
-        this.addCash(1);
+        this.addCash(10);
         this.updateCooldown(enums.Actions.chatActivity)
         return;
     }

@@ -5,7 +5,7 @@ export const Actions = {
 		fieldName: "jobAction"
 	},
 	chatActivity: {
-		cooldown: 60 * 5,
+		cooldown: 60 * 60,
 		fieldName: "chatActivityAction"
 	},
 }
