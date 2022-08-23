@@ -1,10 +1,10 @@
 import { EmbedBuilder } from "discord.js";
-import { Actions, Color, CommandName } from "../models/enums.js"
-import { RepositoryHandler } from "../persistence/repository.js"
-import * as db from '../persistence/dbManager.js'
+import { Actions, Color, CommandName } from "../models/enums.js";
+import { addCashToGuildBank, generateAddCashToBankMessage } from "../models/skills/add-cash-to-guild-bank.js";
 import { generateBegginMessage } from "../models/skills/begging.js";
 import { generateGiveCashMessage } from "../models/skills/give-cash.js";
-import { addCashToGuildBank, generateAddCashToBankMessage } from "../models/skills/add-cash-to-guild-bank.js";
+import * as db from '../persistence/dbManager.js';
+import { RepositoryHandler } from "../persistence/repository.js";
 const repo = new RepositoryHandler().getInstance();
 
 
@@ -42,7 +42,7 @@ const topRichAction = async (interaction) => {
 
     const exampleEmbed = new EmbedBuilder()
         .setColor(Color.purple)
-        .setTitle(`TOP ${userList.length} RICHEST`)
+        .setTitle(`TOP ${userList.length} RICHEST USERS`)
         .setDescription(list.join('\n'))
         .setTimestamp();
 
@@ -80,11 +80,30 @@ const addCashToGuild = async (interaction) => {
     await interaction.editReply({ embeds: [exampleEmbed] });
 }
 
+const guildsTopRich = async (interaction) => {
+    const activeGuild = await repo.getGuild(interaction.guild.id)
+    const guildsList = await db.getRichestGuilds(interaction);
+    const list = [];
+    for (var i = 0; i < guildsList.length; i++) {
+        const guild = guildsList[i]
+        list.push(`**#${i + 1} - ${guild.name}** - ${guild.bank} ${activeGuild.coinEmote}`)
+    }
+
+    const exampleEmbed = new EmbedBuilder()
+        .setColor(Color.purple)
+        .setTitle(`TOP ${guildsList.length} RICHEST GUILDS`)
+        .setDescription(list.join('\n'))
+        .setTimestamp();
+
+    await interaction.editReply({ embeds: [exampleEmbed] });
+}
+
 export const actions = new Map([
     [CommandName.beg, begAction],
     [CommandName.giveCoin, giveCoins],
     [CommandName.setCoin, setCoinAction],
     [CommandName.topRich, topRichAction],
-    [CommandName.addCashToGuild, addCashToGuild]
+    [CommandName.addCashToGuild, addCashToGuild],
+    [CommandName.guildTopRich, guildsTopRich]
 ]
 )

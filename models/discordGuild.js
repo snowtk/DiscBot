@@ -12,9 +12,9 @@ export class discordGuild {
 
     addCashToGuildBank(user, amount) {
         if (user && amount > 0) {
-            this.bank += amount;
             user.removeCash(amount);
             db.updateGuildBank(this, amount);
+            this.bank += amount;
             return true;
         }
         return false;

@@ -158,3 +158,16 @@ export async function updateGuildBank(guild, amount) {
     }
   });
 }
+
+export async function getRichestGuilds() {
+  return new Promise(function (resolve, reject) {
+    log(`Retreiving richest guilds`);
+    let sql = `select * from guilds order by bank desc limit 15`;
+    db.all(sql, function (err, rows) {
+      if (err) {
+        reject(console.error(err.message));
+      }
+      resolve(rows);
+    });
+  })
+}
