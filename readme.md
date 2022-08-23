@@ -3,7 +3,7 @@
 A discord bot developed using NodeJs 
 
 ## Installation
-1. Installthe [SQLite Studio](https://sqlitestudio.pl).
+1. Install the [SQLite Studio](https://sqlitestudio.pl).
 
 2. Run the following command in your console:
 

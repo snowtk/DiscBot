@@ -26,7 +26,6 @@ client.on('ready', () => {
   repo.validateGuilds(client);
 });
 
-
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
   const action = actions.get(interaction.commandName)

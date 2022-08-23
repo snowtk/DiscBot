@@ -14,7 +14,8 @@ export const CommandName = {
 	beg: 'beg',
 	topRich: 'top_rich',
 	setCoin: 'setcoin',
-	giveCoin: 'give_coins'
+	giveCoin: 'give_coins',
+	addCashToGuild: "add_cash_to_guild_bank"
 }
 
 export const Color = {

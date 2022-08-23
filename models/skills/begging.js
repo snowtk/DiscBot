@@ -1,7 +1,7 @@
 import { Actions, Color } from "../enums.js";
 import { EmbedBuilder } from "discord.js";
 
-export function begging(user, taaker) {
+export function begging(user) {
     const cash = Math.floor(0 + Math.random() * 3);
     user.addCash(cash);
     user.updateCooldown(Actions.beg)

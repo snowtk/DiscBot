@@ -4,6 +4,7 @@ import { RepositoryHandler } from "../persistence/repository.js"
 import * as db from '../persistence/dbManager.js'
 import { generateBegginMessage } from "../models/skills/begging.js";
 import { generateGiveCashMessage } from "../models/skills/give-cash.js";
+import { addCashToGuildBank, generateAddCashToBankMessage } from "../models/skills/add-cash-to-guild-bank.js";
 const repo = new RepositoryHandler().getInstance();
 
 
@@ -66,10 +67,24 @@ const giveCoins = async (interaction) => {
     await interaction.editReply({ embeds: [exampleEmbed] });
 }
 
+const addCashToGuild = async (interaction) => {
+    const amount = interaction.options.getInteger('amount');
+    const giver = await repo.getUser(interaction.user.id, interaction.guild.id, interaction);
+    const guild = await repo.getGuild(interaction.guild.id);
+
+    let description = addCashToGuildBank(giver, guild, amount) ?
+        `${giver.interaction.user.toString()} has given ${amount} ${guild.coinEmote} to ${guild.name}` :
+        `You don't have enough ${guild.coinEmote}`;
+
+    const exampleEmbed = generateAddCashToBankMessage(description)
+    await interaction.editReply({ embeds: [exampleEmbed] });
+}
+
 export const actions = new Map([
     [CommandName.beg, begAction],
     [CommandName.giveCoin, giveCoins],
     [CommandName.setCoin, setCoinAction],
-    [CommandName.topRich, topRichAction]
+    [CommandName.topRich, topRichAction],
+    [CommandName.addCashToGuild, addCashToGuild]
 ]
 )

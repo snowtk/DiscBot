@@ -21,9 +21,14 @@ const giveCoins = new SlashCommandBuilder()
   .setDescription('give someone coins')
   .addUserOption(option => option.setName('target').setDescription('Select a user').setRequired(true))
   .addIntegerOption(option => option.setName('amount').setDescription('amount of coins to give').setRequired(true).setMinValue(0));
+const addCashToGuild = new SlashCommandBuilder()
+  .setName('add_cash_to_guild_bank')
+  .setDescription('give someone coins')
+  .addIntegerOption(option => option.setName('amount').setDescription('amount of coins to give').setRequired(true).setMinValue(0));
 commands.push(data);
 commands.push(topRich);
 commands.push(giveCoins);
+commands.push(addCashToGuild);
 
 const rest = new REST({ version: '10' }).setToken(token);
 

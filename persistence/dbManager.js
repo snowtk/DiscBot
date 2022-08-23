@@ -148,3 +148,13 @@ export async function updateGuildCoin(guild, emote) {
     }
   });
 }
+export async function updateGuildBank(guild, amount) {
+  const totalAmount = guild.bank + amount;
+  log(`Adding ${totalAmount} to guild ${guild.name}`)
+
+  db.run(`UPDATE 'guilds' SET bank = '${totalAmount}' WHERE id = '${guild.id}'`, function (value, err) {
+    if (err) {
+      return console.error(err.message);
+    }
+  });
+}

@@ -1,4 +1,4 @@
-import { Actions, Color } from "../enums.js";
+import { Color } from "../enums.js";
 import { EmbedBuilder } from "discord.js";
 
 export function giveCash(user, taker, amount) {
