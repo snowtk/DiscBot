@@ -4,6 +4,7 @@ import * as logger from './logger.js'
 import * as chalkThemes from '../models/chalkThemes.js'
 import { begging } from './skills/begging.js'
 import { getUnixTime } from './utils.js'
+import { giveCash } from './skills/give-cash.js'
 
 export class discordUser {
 
@@ -31,6 +32,7 @@ export class discordUser {
         db.addCash(this, cash);
         this.cash += cash;
     }
+
     removeCash(cash) {
         if (cash <= 0) return;
         this.log(`Removing ${cash} coins from ${this.name}, ${this.cash} - ${cash} = ${this.cash - cash}`);
@@ -39,12 +41,8 @@ export class discordUser {
     }
 
     giveCash(taker, amount) {
-        // TODO: make this function in other file 
-
-        if (amount > this.cash) return;
-        this.log(`${this.name} giving ${amount} coins to ${taker.name}`)
-        this.removeCash(amount);
-        taker.addCash(amount);
+        this.log(`${this.name} giving ${amount} coins to ${taker.name}`);
+        return giveCash(this, taker, amount);
     }
 
     beg() {
@@ -52,7 +50,6 @@ export class discordUser {
     }
 
     getActivityReward() {
-        // TODO: make this function in other file 
         this.addCash(1);
         this.updateCooldown(enums.Actions.chatActivity)
         return;

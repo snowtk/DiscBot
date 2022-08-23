@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import *  as enums from './models/enums.js'
 import * as expressServer from "./server.js"
-import { Client} from 'discord.js'
+import { Client } from 'discord.js'
 import * as chalkThemes from './models/chalkThemes.js'
 import * as logger from './models/logger.js'
 import { actions } from './commands/action-commands.js'
@@ -28,7 +28,6 @@ client.on('ready', () => {
 
 
 client.on('interactionCreate', async interaction => {
-
   if (!interaction.isChatInputCommand()) return;
   const action = actions.get(interaction.commandName)
   if (action) {
@@ -47,8 +46,8 @@ async function activityReward(user) {
   log(`${user.name} is eligible for activity token reward`);
   user.getActivityReward();
   let coinEmoji = "🪙";
-  
-  let guild = await repo.getGuild(user.guildId);
+
+  const guild = await repo.getGuild(user.guildId);
   if (guild.guild.emojis.cache.find(emoji => emoji.toString() === guild.coinEmote)) {
     coinEmoji = guild.coinEmote;
   }
@@ -58,7 +57,7 @@ async function activityReward(user) {
 client.on('messageCreate', async (interaction) => {
   if (interaction.author.bot) return;
   log(`${interaction.author.username} talked in ${interaction.guildId}`);
-  let author = await repo.getUser(interaction.author.id, interaction.guildId, interaction);
+  const author = await repo.getUser(interaction.author.id, interaction.guildId, interaction);
   activityReward(author);
 });
 /*

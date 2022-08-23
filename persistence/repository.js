@@ -78,14 +78,14 @@ class Repository {
         let cachedGuilds = this.client.guilds.cache.map(guild => guild);
         let dbGuilds = await call(db.getGuilds);
         let dbDict = Object.assign({}, ...dbGuilds.map((x) => ({ [x.id]: x })));
-    
+
         for (var i = 0; i < cachedGuilds.length; i++) {
             if (dbDict[cachedGuilds[i].id]) {
                 let dbGuild = dbDict[cachedGuilds[i].id];
                 this.cache.addGuildToCache(cachedGuilds[i].id, new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]))
                 //guilds[cachedGuilds[i].id] = new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]);
             } else {
-                let newGuild = await call(db.registerGuild,cachedGuilds[i]);
+                let newGuild = await call(db.registerGuild, cachedGuilds[i]);
                 this.cache.addGuildToCache(cachedGuilds[i].id, newGuild)
                 //guilds[cachedGuilds[i].id] = new discordGuild(cachedGuilds[i].id, cachedGuilds[i].name, cachedGuilds[i]);
             }
