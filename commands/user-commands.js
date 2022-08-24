@@ -42,7 +42,7 @@ export const topRichAction = async (interaction) => {
     const exampleEmbed = new EmbedBuilder()
         .setColor(Color.purple)
         .setTitle(`TOP ${userList.length} RICHEST USERS`)
-        .setDescription(list.join('\n'))
+        .setDescription("\n" +list.join('\n'))
         .setTimestamp();
 
     await interaction.editReply({ embeds: [exampleEmbed] });

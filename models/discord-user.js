@@ -51,7 +51,16 @@ export class DiscordUser {
     }
 
     getActivityReward() {
-        this.addCash(10);
+        console.log();
+        let time = this.cooldowns[enums.Actions.chatActivity.fieldName];
+        if(time == null){
+            time = getUnixTime();
+        }
+        const extraTime = getUnixTime() - time; //time difference in seconds
+        const extraHours = extraTime/3600;
+        //formula ajusted to the left so x(0) -> x(0+cooldown) to account for the cooldown time
+        const cashToAdd = (10*(extraHours+(enums.Actions.chatActivity.cooldown/3600)))/(1+0.08*(extraHours+(enums.Actions.chatActivity.cooldown/3600)))
+        this.addCash(Math.round(cashToAdd));
         this.updateCooldown(enums.Actions.chatActivity)
         return;
     }
