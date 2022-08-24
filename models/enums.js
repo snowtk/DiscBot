@@ -16,7 +16,9 @@ export const CommandName = {
 	setCoin: 'setcoin',
 	giveCoin: 'give_coins',
 	addCashToGuild: "add_cash_to_guild_bank",
-	guildTopRich: 'top_rich_guilds'
+	guildTopRich: 'top_rich_guilds',
+	getUserProfile: 'profile',
+	getGuildProfile: 'guild'
 }
 
 export const Color = {

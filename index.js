@@ -31,12 +31,20 @@ const addCashToGuild = new SlashCommandBuilder()
 const topRichGuilds = new SlashCommandBuilder()
   .setName(CommandName.guildTopRich)
   .setDescription('List of the richest servers');
-
+const getUserProfile = new SlashCommandBuilder()
+  .setName(CommandName.getUserProfile)
+  .setDescription('check a user profile')
+  .addUserOption(option => option.setName('user').setDescription('Select a user').setRequired(false));
+const getGuildProfile = new SlashCommandBuilder()
+  .setName(CommandName.getGuildProfile)
+  .setDescription('check the guild profile');
 commands.push(data);
 commands.push(topRich);
 commands.push(giveCoins);
 commands.push(addCashToGuild);
 commands.push(topRichGuilds);
+commands.push(getUserProfile);
+commands.push(getGuildProfile);
 
 const rest = new REST({ version: '10' }).setToken(token);
 

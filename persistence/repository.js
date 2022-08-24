@@ -3,7 +3,7 @@ import * as logger from "../models/logger.js";
 import * as chalkThemes from "../models/chalkThemes.js";
 import { Cache } from './cache/cache-handler.js';
 import { getUnixTime } from '../models/utils.js';
-import { discordGuild } from '../models/discordGuild.js';
+import { DiscordGuild } from '../models/discord-guild.js';
 
 function log(message, ...params) {
     logger.log(chalkThemes.error(message), ...params);
@@ -82,12 +82,12 @@ class Repository {
         for (var i = 0; i < cachedGuilds.length; i++) {
             if (dbDict[cachedGuilds[i].id]) {
                 let dbGuild = dbDict[cachedGuilds[i].id];
-                this.cache.addGuildToCache(cachedGuilds[i].id, new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]))
-                //guilds[cachedGuilds[i].id] = new discordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]);
+                this.cache.addGuildToCache(cachedGuilds[i].id, new DiscordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i], dbGuild.bank))
+                //guilds[cachedGuilds[i].id] = new DiscordGuild(dbGuild.id, dbGuild.name, dbGuild.coinEmote, cachedGuilds[i]);
             } else {
                 let newGuild = await call(db.registerGuild, cachedGuilds[i]);
                 this.cache.addGuildToCache(cachedGuilds[i].id, newGuild)
-                //guilds[cachedGuilds[i].id] = new discordGuild(cachedGuilds[i].id, cachedGuilds[i].name, cachedGuilds[i]);
+                //guilds[cachedGuilds[i].id] = new DiscordGuild(cachedGuilds[i].id, cachedGuilds[i].name, cachedGuilds[i]);
             }
         }
         log(chalkThemes.setup(`--------------------------------------------------`));

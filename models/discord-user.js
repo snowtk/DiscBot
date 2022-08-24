@@ -5,8 +5,9 @@ import * as chalkThemes from '../models/chalkThemes.js'
 import { begging } from './skills/begging.js'
 import { getUnixTime } from './utils.js'
 import { giveCash } from './skills/give-cash.js'
+import { ContextMenuCommandAssertions } from 'discord.js'
 
-export class discordUser {
+export class DiscordUser {
 
     constructor(userId, discordId, guildId, name, cash, interaction) {
         this.userId = userId;
@@ -29,14 +30,14 @@ export class discordUser {
     addCash(cash) {
         if (cash <= 0) return;
         this.log(`Adding ${cash} coins to ${this.name}, ${this.cash} + ${cash} = ${this.cash + cash}`);
-        db.addCash(this, cash);
+        db.addCashToUser(this, cash);
         this.cash += cash;
     }
 
     removeCash(cash) {
         if (cash <= 0) return;
         this.log(`Removing ${cash} coins from ${this.name}, ${this.cash} - ${cash} = ${this.cash - cash}`);
-        db.addCash(this, 0 - cash);
+        db.addCashToUser(this, 0 - cash);
         this.cash -= cash;
     }
 
@@ -76,6 +77,19 @@ export class discordUser {
             return parseInt(this.cooldowns[field]) - currentTime;
         }
         return 0;
+    }
+
+    getUserProfileInformation(guildCoin = 'coins') {
+        const userAttrs = new Map([
+            ['Coins', `${this.cash} ${guildCoin}`]
+        ]);
+
+        const content = [];
+        userAttrs.forEach((value, key) => {
+            content.push(`${key} : ${value}`);
+        });
+
+        return content.join('\n');
     }
 
     static async getUserFromDb(userId, guildId) {

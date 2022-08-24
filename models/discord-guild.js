@@ -1,7 +1,7 @@
 import * as db from '../persistence/dbManager.js'
 const defaultCoinName = 'coins'
 
-export class discordGuild {
+export class DiscordGuild {
     constructor(id, name, coinEmote = 'coins', guild = null, bank = 0) {
         this.id = id;
         this.name = name;
@@ -23,5 +23,19 @@ export class discordGuild {
     setCoin(coinEmote) {
         this.coinEmote = coinEmote;
         db.updateGuildCoin(this, coinEmote);
+    }
+
+    getGuildProfileInformation() {
+        const guildAttrs = new Map([
+            ['Bank', `${this.bank} ${this.coinEmote}`]
+        ]);
+
+        const content = [];
+        guildAttrs.forEach((value, key) => {
+            content.push(`${key} : ${value}`);
+        });
+
+        return content.join('\n');
+
     }
 }

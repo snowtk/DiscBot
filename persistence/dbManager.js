@@ -1,9 +1,9 @@
 import sqlite3 from 'sqlite3';
-import { discordUser } from '../models/discordUser.js'
+import { DiscordUser } from '../models/discord-user.js'
 import { Actions } from '../models/enums.js';
 import * as chalkThemes from '../models/chalkThemes.js'
 import * as logger from '../models/logger.js'
-import { discordGuild } from '../models/discordGuild.js';
+import { DiscordGuild } from '../models/discord-guild.js';
 
 function log(message, ...params) {
   logger.log(chalkThemes.database(message), ...params);
@@ -19,17 +19,18 @@ let db = new sqlite3.Database('./persistence/discbot.db', sqlite3.OPEN_READWRITE
   log(chalkThemes.setup("Connected"))
 });
 
-export async function addCash(user, cash) {
-  log(`Adding ${cash} coins to ${user.name}, new total: ${cash + user.cash}`);
-  db.run(`UPDATE 'users' SET cash = '${user.cash + cash}' WHERE id = '${user.userId}'`, function (value, err) {
+export async function updateCooldown(user, field, unixCooldown) {
+  db.run(`UPDATE 'cooldowns' SET ${field} = '${unixCooldown}' WHERE userId = '${user.userId}'`, function (value, err) {
     if (err) {
       return console.error(err.message);
     }
   });
 }
 
-export async function updateCooldown(user, field, unixCooldown) {
-  db.run(`UPDATE 'cooldowns' SET ${field} = '${unixCooldown}' WHERE userId = '${user.userId}'`, function (value, err) {
+// USER ACTIONS
+export async function addCashToUser(user, cash) {
+  log(`Adding ${cash} coins to ${user.name}, new total: ${cash + user.cash}`);
+  db.run(`UPDATE 'users' SET cash = '${user.cash + cash}' WHERE id = '${user.userId}'`, function (value, err) {
     if (err) {
       return console.error(err.message);
     }
@@ -39,7 +40,7 @@ export async function updateCooldown(user, field, unixCooldown) {
 export async function registerUser(userId, username, guildId) {
   return new Promise(function (resolve, reject) {
     log(`Registering user ${username}, ID:${userId}, Guild ID:${guildId}`);
-    db.run(`INSERT INTO users(discordUserId, discordGuildId, name, cash) VALUES(?, ?, ?, ?)`,
+    db.run(`INSERT INTO users(DiscordUserId, DiscordGuildId, name, cash) VALUES(?, ?, ?, ?)`,
       [userId, guildId, username, 0], function (value, err) {
         if (err) {
           reject(console.error(err.message));
@@ -62,16 +63,14 @@ export async function getUserFromDb(userId, guildId) {
         return console.error(err.message);
       }
       if (row) {
-        let user = new discordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
+        let user = new DiscordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
         for (const [key, value] of Object.entries(Actions)) {
           user.cooldowns[value.fieldName] = row[value.fieldName];
         }
-        //console.log(user);
-        //hook(user, interaction, callback);
+
         resolve(user);
       } else {
         resolve(null);
-        //registerUser(interaction).then(() => {getUser(interaction).then((user) => {resolve(user)});});
       }
     });
   })
@@ -90,10 +89,11 @@ export async function getRichestUsers(interaction) {
   })
 }
 
-//select * from users order by cash desc limit 3
+
+// GUILD ACTIONS
 export async function getGuilds() {
   return new Promise(function (resolve, reject) {
-    let sql = `SELECT cast(id as text) as id, name, coinEmote
+    let sql = `SELECT cast(id as text) as id, name, coinEmote, bank
                 FROM guilds`;
     db.all(sql, function (err, rows) {
       if (err) {
@@ -116,7 +116,7 @@ export async function getGuildFromDb(guildId) {
         return console.error(err.message);
       }
       if (row) {
-        let guild = new discordGuild(row.id, row.name, null, null);
+        let guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
         resolve(guild);
       } else {
         resolve(null);

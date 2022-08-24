@@ -1,6 +1,5 @@
 import * as logger from "../../models/logger.js";
 import * as chalkThemes from "../../models/chalkThemes.js";
-import { getUnixTime } from "../../models/utils.js";
 
 export class Cache {
 
@@ -9,7 +8,6 @@ export class Cache {
         this.guilds = {};
         this._maximunSize = 100;
     }
-
 
     log(message, ...params) {
         logger.log(chalkThemes.main(message), ...params);
@@ -27,8 +25,8 @@ export class Cache {
     addGuildToCache(guildId, guild) {
         this.guilds[`${guildId}`] = guild;
     }
-    
-    getGuildFromCache(guildId){
+
+    getGuildFromCache(guildId) {
         return this.guilds[`${guildId}`];
     }
 
