@@ -1,9 +1,10 @@
 import sqlite3 from 'sqlite3';
 import { DiscordUser } from '../models/discord-user.js'
 import { Actions } from '../models/enums.js';
-import * as chalkThemes from '../models/chalkThemes.js'
-import * as logger from '../models/logger.js'
+import * as chalkThemes from '../shared/chalkThemes.js'
+import * as logger from '../shared/logger.js'
 import { DiscordGuild } from '../models/discord-guild.js';
+import { RoleStore } from '../models/store.js';
 
 function log(message, ...params) {
   logger.log(chalkThemes.database(message), ...params);
@@ -168,6 +169,68 @@ export async function getRichestGuilds() {
         reject(console.error(err.message));
       }
       resolve(rows);
+    });
+  })
+}
+
+export async function addRoleToStore(role) {
+  return new Promise(function (resolve, reject) {
+    log(`Adding role ${role.roleId}| for guild ${role.guildId} in the Store`);
+    db.run(`INSERT INTO roleStore(roleId, guildId, isDynamic, cost) VALUES(?, ?, ?, ?)`,
+      [role.roleId, role.guildId, role.isDynamic, role.cost], function (value, err) {
+        log(value)
+        if (err) {
+          reject(console.error(err.message));
+        }
+        getRoleStoreFromDb(role.roleId).then((roleStore) => {
+          resolve(roleStore);
+        });
+      });
+  })
+}
+
+export async function getAllRolesFromStore(guildId) {
+  return new Promise(function (resolve, reject) {
+    log(`Retreiving all roles in store of guild  ${guildId}`);
+    let sql = `select * from roleStore order by cost where guildId = ${guildId}`;
+    db.all(sql, function (err, rows) {
+      if (err) {
+        reject(console.error(err.message));
+      }
+      resolve(rows);
+    });
+  })
+}
+
+export async function getRoleInStore(roleId, guildId) {
+  return new Promise(function (resolve, reject) {
+    let sql = `select * from roleStore where guildId = ${guildId} and roleId=${roleId} `;
+    db.all(sql, function (err, rows) {
+      if (err) {
+        reject(console.error(err.message));
+      }
+      resolve(rows);
+    });
+  })
+}
+
+export async function getRoleStoreFromDb(roleId) {
+  return new Promise(function (resolve, reject) {
+
+    let sql = `SELECT *
+                  FROM roleStore
+                  WHERE roleId  = "${roleId}" `;
+    db.get(sql, (err, row) => {
+      if (err) {
+        return console.error(err.message);
+      }
+      if (row) {
+        let roleStore = new RoleStore(row.id, row.guildId, row.roleId, row.isDynamic, row.cost);
+
+        resolve(roleStore);
+      } else {
+        resolve(null);
+      }
     });
   })
 }

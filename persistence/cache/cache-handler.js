@@ -1,5 +1,5 @@
-import * as logger from "../../models/logger.js";
-import * as chalkThemes from "../../models/chalkThemes.js";
+import * as logger from "../../shared/logger.js";
+import * as chalkThemes from "../../shared/chalkThemes.js";
 
 export class Cache {
 

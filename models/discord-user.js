@@ -1,11 +1,10 @@
 import * as db from '../persistence/dbManager.js'
-import * as enums from './enums.js'
-import * as logger from './logger.js'
-import * as chalkThemes from '../models/chalkThemes.js'
+import { Actions } from './enums.js'
+import * as logger from '../shared/logger.js'
+import * as chalkThemes from '../shared/chalkThemes.js'
 import { begging } from './skills/begging.js'
-import { getUnixTime } from './utils.js'
+import { getUnixTime, HOUR_IN_SECONDS } from '../shared/utils.js'
 import { giveCash } from './skills/give-cash.js'
-import { ContextMenuCommandAssertions } from 'discord.js'
 
 export class DiscordUser {
 
@@ -52,17 +51,24 @@ export class DiscordUser {
 
     getActivityReward() {
         console.log();
-        let time = this.cooldowns[enums.Actions.chatActivity.fieldName];
-        if(time == null){
+        let time = this.cooldowns[Actions.chatActivity.fieldName];
+        if (time == null) {
             time = getUnixTime();
         }
         const extraTime = getUnixTime() - time; //time difference in seconds
-        const extraHours = extraTime/3600;
-        //formula ajusted to the left so x(0) -> x(0+cooldown) to account for the cooldown time
-        const cashToAdd = (10*(extraHours+(enums.Actions.chatActivity.cooldown/3600)))/(1+0.08*(extraHours+(enums.Actions.chatActivity.cooldown/3600)))
+        const extraHours = extraTime / HOUR_IN_SECONDS;
+        const cashToAdd = this.#calculateCashToAdd(extraHours)
         this.addCash(Math.round(cashToAdd));
-        this.updateCooldown(enums.Actions.chatActivity)
+        this.updateCooldown(Actions.chatActivity)
         return;
+    }
+
+    //formula ajusted to the left so x(0) -> x(0+cooldown) to account for the cooldown time
+    #calculateCashToAdd(extraHours) {
+        const cooldownTime = Actions.chatActivity.cooldown / HOUR_IN_SECONDS;
+        const extraHoursSum = extraHours + cooldownTime;
+
+        return (10 * extraHours) / (1 + 0.08 * extraHoursSum)
     }
 
     updateCooldown(action) {

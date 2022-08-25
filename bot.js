@@ -1,11 +1,11 @@
 import dotenv from 'dotenv'
-import *  as enums from './models/enums.js'
 import * as expressServer from "./server.js"
 import { Client } from 'discord.js'
-import * as chalkThemes from './models/chalkThemes.js'
-import * as logger from './models/logger.js'
 import { actions } from './commands/action-commands.js'
 import { RepositoryHandler } from './persistence/repository.js'
+import { Actions } from './models/enums.js'
+import * as logger from './shared/logger.js'
+import * as chalkThemes from './shared/chalkThemes.js'
 
 dotenv.config()
 
@@ -39,7 +39,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 async function activityReward(user) {
-  if (!user.canAct(enums.Actions.chatActivity.fieldName)) {
+  if (!user.canAct(Actions.chatActivity.fieldName)) {
     return;
   }
   log(`${user.name} is eligible for activity token reward`);

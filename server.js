@@ -1,6 +1,6 @@
 import express from 'express'
-import * as chalkThemes from './models/chalkThemes.js'
-import {log} from './models/logger.js'
+import * as chalkThemes from './shared/chalkThemes.js'
+import { log } from './shared/logger.js'
 
 export const server = express()
 

@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { Color, CommandName } from "../models/enums.js";
+import { Color } from "../models/enums.js";
 import { addCashToGuildBank, generateAddCashToBankMessage } from "../models/skills/add-cash-to-guild-bank.js";
 import * as db from '../persistence/dbManager.js';
 import { RepositoryHandler } from "../persistence/repository.js";
@@ -10,12 +10,12 @@ export const addCashToGuild = async (interaction) => {
     const giver = await repo.getUser(interaction.user.id, interaction.guild.id, interaction);
     const guild = await repo.getGuild(interaction.guild.id);
 
-    let description = addCashToGuildBank(giver, guild, amount) ?
+    let message = addCashToGuildBank(giver, guild, amount) ?
         `${giver.interaction.user.toString()} has given ${amount} ${guild.coinEmote} to ${guild.name}` :
         `You don't have enough ${guild.coinEmote}`;
 
-    const exampleEmbed = generateAddCashToBankMessage(description)
-    await interaction.editReply({ embeds: [exampleEmbed] });
+    const reply = generateAddCashToBankMessage(message, guild)
+    await interaction.editReply({ embeds: [reply] });
 }
 
 export const guildsTopRich = async (interaction) => {
@@ -27,13 +27,13 @@ export const guildsTopRich = async (interaction) => {
         list.push(`**#${i + 1} - ${guild.name}** - ${guild.bank} ${activeGuild.coinEmote}`)
     }
 
-    const exampleEmbed = new EmbedBuilder()
+    const reply = new EmbedBuilder()
         .setColor(Color.purple)
         .setTitle(`TOP ${guildsList.length} RICHEST GUILDS`)
         .setDescription(list.join('\n'))
         .setTimestamp();
 
-    await interaction.editReply({ embeds: [exampleEmbed] });
+    await interaction.editReply({ embeds: [reply] });
 }
 
 export const getGuildProfile = async (interaction) => {
@@ -41,12 +41,12 @@ export const getGuildProfile = async (interaction) => {
     const description = guild.getGuildProfileInformation();
     const avatar = interaction.guild.iconURL({ size: 32, dynamic: true });
 
-    const exampleEmbed = new EmbedBuilder()
+    const reply = new EmbedBuilder()
         .setColor(Color.purple)
         .setTitle(`${guild.name} Profile`)
         .setThumbnail(avatar)
         .setDescription(description)
         .setTimestamp();
 
-    await interaction.editReply({ embeds: [exampleEmbed] });
+    await interaction.editReply({ embeds: [reply] });
 }

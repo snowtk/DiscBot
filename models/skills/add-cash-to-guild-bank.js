@@ -1,5 +1,5 @@
-import { Color } from "../enums.js";
 import { EmbedBuilder } from "discord.js";
+import { Color } from "../enums.js";
 
 export function addCashToGuildBank(user, guild, amount) {
     if (user && amount > 0 && user.cash >= amount) {
@@ -9,11 +9,12 @@ export function addCashToGuildBank(user, guild, amount) {
     return false;
 }
 
-export function generateAddCashToBankMessage(description) {
+export function generateAddCashToBankMessage(message, guild) {
     return new EmbedBuilder()
         .setColor(Color.purple)
         .setTitle('Add Cash To Bank')
-        .setDescription(description)
+        .setDescription(message)
+        .addFields({ name: `${guild.name} Total Cash in Bank`, value: `${guild.bank} ${guild.coinEmote}`, inline: true })
         .setTimestamp();
 
 }

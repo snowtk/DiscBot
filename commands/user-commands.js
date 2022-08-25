@@ -1,6 +1,5 @@
 import { EmbedBuilder } from "discord.js";
 import { Actions, Color } from "../models/enums.js";
-import { addCashToGuildBank } from "../models/skills/add-cash-to-guild-bank.js";
 import { generateBegginMessage } from "../models/skills/begging.js";
 import { generateGiveCashMessage } from "../models/skills/give-cash.js";
 import * as db from '../persistence/dbManager.js';
@@ -19,9 +18,9 @@ export const begAction = async (interaction) => {
     }
     const cash = user.beg();
     const guild = await repo.getGuild(user.guildId);
-    const exampleEmbed = generateBegginMessage(user, guild, cash);
+    const reply = generateBegginMessage(user, guild, cash);
 
-    await user.interaction.editReply({ embeds: [exampleEmbed] });
+    await user.interaction.editReply({ embeds: [reply] });
 }
 
 export const setCoinAction = async (interaction) => {
@@ -39,13 +38,13 @@ export const topRichAction = async (interaction) => {
         list.push(`**#${i + 1} - ${userList[i].name}** - ${userList[i].cash} ${guild.coinEmote}`)
     }
 
-    const exampleEmbed = new EmbedBuilder()
+    const reply = new EmbedBuilder()
         .setColor(Color.purple)
         .setTitle(`TOP ${userList.length} RICHEST USERS`)
-        .setDescription("\n" +list.join('\n'))
+        .setDescription("\n" + list.join('\n'))
         .setTimestamp();
 
-    await interaction.editReply({ embeds: [exampleEmbed] });
+    await interaction.editReply({ embeds: [reply] });
 }
 
 export const giveCoins = async (interaction) => {
@@ -67,9 +66,9 @@ export const giveCoins = async (interaction) => {
         `${giver.interaction.user.toString()} has given ${amount} ${guild.coinEmote} to ${taker.interaction.user.toString()}` :
         `You don't have enough ${guild.coinEmote}`;
 
-    const exampleEmbed = generateGiveCashMessage(description)
+    const reply = generateGiveCashMessage(description)
 
-    await interaction.editReply({ embeds: [exampleEmbed] });
+    await interaction.editReply({ embeds: [reply] });
 }
 
 export const getUserProfile = async (interaction) => {
@@ -82,12 +81,12 @@ export const getUserProfile = async (interaction) => {
         userToFind.displayAvatarURL({ size: 32, dynamic: true }) :
         user.interaction.user.displayAvatarURL({ size: 32, dynamic: true });
 
-    const exampleEmbed = new EmbedBuilder()
+    const reply = new EmbedBuilder()
         .setColor(Color.purple)
         .setTitle(`${user.name} Profile`)
         .setThumbnail(userAvatar)
         .setDescription(description)
         .setTimestamp();
 
-    await interaction.editReply({ embeds: [exampleEmbed] });
+    await interaction.editReply({ embeds: [reply] });
 }

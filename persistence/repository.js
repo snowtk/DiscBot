@@ -1,8 +1,8 @@
 import * as db from './dbManager.js'
-import * as logger from "../models/logger.js";
-import * as chalkThemes from "../models/chalkThemes.js";
+import * as logger from "../shared/logger.js";
+import * as chalkThemes from "../shared/chalkThemes.js";
 import { Cache } from './cache/cache-handler.js';
-import { getUnixTime } from '../models/utils.js';
+import { getUnixTime } from '../shared/utils.js';
 import { DiscordGuild } from '../models/discord-guild.js';
 
 function log(message, ...params) {

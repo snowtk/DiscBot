@@ -11,7 +11,7 @@ const commands = [
     description: 'beg ecila for pennies'
   },
 ];
-const data = new SlashCommandBuilder()
+const setCoin = new SlashCommandBuilder()
   .setName(CommandName.setCoin)
   .setDescription('Set currency name/emote for this server')
   .addStringOption(option => option.setName('currency_name').setDescription('currency name or emote').setRequired(true))
@@ -38,13 +38,22 @@ const getUserProfile = new SlashCommandBuilder()
 const getGuildProfile = new SlashCommandBuilder()
   .setName(CommandName.getGuildProfile)
   .setDescription('check the guild profile');
-commands.push(data);
+const addRoleToShop = new SlashCommandBuilder()
+  .setName(CommandName.addRoleToShop)
+  .setDescription('add a role to the shop')
+  .addRoleOption(option => option.setName('role').setDescription('Select a role').setRequired(true))
+  .addBooleanOption(option => option.setName('dynamic_cost').setDescription('Sets that the cost of the role is dynamic (based on your server current bank value) or fixed').setRequired(true))
+  .addIntegerOption(option => option.setName('cost').setDescription('calculate the % of cost (if value is set to be dynamic) of the role or set if to a static value').setRequired(true).setMinValue(0))
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+;
+commands.push(setCoin);
 commands.push(topRich);
 commands.push(giveCoins);
 commands.push(addCashToGuild);
 commands.push(topRichGuilds);
 commands.push(getUserProfile);
 commands.push(getGuildProfile);
+commands.push(addRoleToShop);
 
 const rest = new REST({ version: '10' }).setToken(token);
 
