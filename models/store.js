@@ -1,4 +1,4 @@
-import * as db from '../persistence/dbManager.js'
+//import * as db from '../persistence/dbManager.js'
 
 export class RoleStore {
 
@@ -19,7 +19,7 @@ export class RoleStore {
         this.isDynamic = isDynamic;
         this.cost = cost;
     }
-
+/*
     static async addRole(guildId, roleId, isDynamic, cost) {
         if (await RoleStore.findRoleInStore(roleId, guildId)) return null;
 
@@ -37,4 +37,5 @@ export class RoleStore {
     static async findRoleInStore(roleId, guildId) {
         return await db.getRoleInStore(roleId, guildId);
     }
+    */
 }

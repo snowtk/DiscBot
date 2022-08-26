@@ -4,6 +4,7 @@ import * as chalkThemes from "../shared/chalkThemes.js";
 import { Cache } from './cache/cache-handler.js';
 import { getUnixTime } from '../shared/utils.js';
 import { DiscordGuild } from '../models/discord-guild.js';
+import { DiscordUser } from '../models/discord-user.js';
 
 function log(message, ...params) {
     logger.log(chalkThemes.error(message), ...params);
@@ -20,10 +21,15 @@ async function call(func, ...params) {
         log(`${func.name} not implemented in the database connection`)
     }
 };
+let instance = null;
 
-class Repository {
+export class Repository {
 
     constructor() {
+        if (instance) {
+            return instance;
+        }
+        instance = this;
         this.cache = new Cache();
         this.client = null;
     }
@@ -33,14 +39,17 @@ class Repository {
         logger.log(chalkThemes.main(message), ...params);
     }
 
+    //#region guilds
     async getGuild(guildId) {
         let guild = this.cache.getGuildFromCache(guildId);
 
         if (!guild) {
-            guild = await call(db.getGuildFromDb, guildId);
+            let row = await call(db.getGuildFromDb, guildId);
+            guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
             if (!guild) {
                 let guildObj = client.guilds.cache.find(x => x.id = guildId);
-                guild = await call(db.registerGuild, guildObj);
+                let row = await call(db.registerGuild, guildObj);
+                guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
                 this.log(`Registring Guild ${guildId} to DB`);
             } else {
                 this.log(`Getting Guild ${guild.name} from DB`);
@@ -52,12 +61,35 @@ class Repository {
         return guild;
     }
 
+    async getTopRichest(guildId) {
+        return await call(db.getRichestUsers, guildId);
+    }
+
+    async getTopRichestGuilds() {
+        return await call(db.getRichestGuilds);
+    }
+
+    async updateGuildBank(guild, amountToAdd) {
+        return await call(db.updateGuildBank, guild, amountToAdd);
+    }
+
+    async updateGuildCoin(guild, coinEmote) {
+        return await call(db.updateGuildCoin, guild, coinEmote);
+    }
+
+    //#endregion
+
+    //#region Users
     async getUser(userId, guildId, interaction) {
         let username = interaction.author ? interaction.author.username : interaction.user.username;
         let user = this.cache.getUserFromCache(userId, guildId)
 
         if (!user) {
-            user = await call(db.getUserFromDb, userId, guildId);
+            row = await call(db.getUserFromDb, userId, guildId);
+            user = new DiscordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
+            for (const [key, value] of Object.entries(Actions)) {
+                user.cooldowns[value.fieldName] = row[value.fieldName];
+            }
             if (!user) {
                 user = await call(db.registerUser, userId, username, guildId);
                 this.log(`Registring ${user.name} to DB`);
@@ -72,6 +104,16 @@ class Repository {
         this.cache.userCacheIsFull();
         return user;
     }
+
+    async addCashToUser(user, amount) {
+        call(db.addCashToUser, user, amount);
+    }
+
+    async updateUserCooldown(user, fieldName, unixCooldown) {
+        call(db.updateGuildBank, user, fieldName, unixCooldown);
+    }
+
+    //#endregion
 
     async validateGuilds() {
         log(chalkThemes.setup(`Loading guilds`));
@@ -91,20 +133,6 @@ class Repository {
             }
         }
         log(chalkThemes.setup(`--------------------------------------------------`));
-    }
-
-}
-
-export class RepositoryHandler {
-
-    constructor() {
-        if (!RepositoryHandler.instance) {
-            RepositoryHandler.instance = new Repository();
-        }
-    }
-
-    getInstance() {
-        return RepositoryHandler.instance;
     }
 
 }

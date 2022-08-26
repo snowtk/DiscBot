@@ -1,13 +1,16 @@
+import { Repository } from './persistence/repository.js'
 import dotenv from 'dotenv'
 import * as expressServer from "./server.js"
 import { Client } from 'discord.js'
 import { actions } from './commands/action-commands.js'
-import { RepositoryHandler } from './persistence/repository.js'
 import { Actions } from './models/enums.js'
 import * as logger from './shared/logger.js'
 import * as chalkThemes from './shared/chalkThemes.js'
 
 dotenv.config()
+
+setMaxListeners(100);
+const repo = new Repository();
 
 function log(message, ...params) {
   logger.log(chalkThemes.main(message), ...params);
@@ -17,9 +20,8 @@ const allIntents = 131071;
 const client = new Client({ intents: allIntents });
 const token = process.env.token;
 
-const repo = new RepositoryHandler().getInstance();
 repo.client = client;
-client.guilds.cache
+
 log(chalkThemes.setup(`--------------------- INIT -----------------------`));
 client.on('ready', () => {
   log(chalkThemes.setup(`Logged in as ${client.user.tag}!`));

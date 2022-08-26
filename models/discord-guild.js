@@ -1,5 +1,7 @@
-import * as db from '../persistence/dbManager.js'
+import { Repository } from "../persistence/repository.js";
+
 const defaultCoinName = 'coins'
+var repo = new Repository();
 
 export class DiscordGuild {
     constructor(id, name, coinEmote = 'coins', guild = null, bank = 0) {
@@ -13,7 +15,7 @@ export class DiscordGuild {
     addCashToGuildBank(user, amount) {
         if (user && amount > 0) {
             user.removeCash(amount);
-            db.updateGuildBank(this, amount);
+            repo.updateGuildBank(this, amount);
             this.bank += amount;
             return true;
         }
@@ -22,7 +24,7 @@ export class DiscordGuild {
 
     setCoin(coinEmote) {
         this.coinEmote = coinEmote;
-        db.updateGuildCoin(this, coinEmote);
+        repo.updateGuildCoin(this, coinEmote);
     }
 
     getGuildProfileInformation() {
@@ -37,5 +39,17 @@ export class DiscordGuild {
 
         return content.join('\n');
 
+    }
+
+    async getTopRichestUsers(){
+        return await repo.getTopRichestUsers(this.id);
+    }
+
+    static async getGuild(guildId){
+        return await repo.getGuild(guildId);
+    }
+
+    static async getRichestGuilds(){
+        return await repo.getRichestGuilds();
     }
 }

@@ -1,9 +1,6 @@
 import sqlite3 from 'sqlite3';
-import { DiscordUser } from '../models/discord-user.js'
-import { Actions } from '../models/enums.js';
 import * as chalkThemes from '../shared/chalkThemes.js'
 import * as logger from '../shared/logger.js'
-import { DiscordGuild } from '../models/discord-guild.js';
 import { RoleStore } from '../models/store.js';
 
 function log(message, ...params) {
@@ -20,7 +17,7 @@ let db = new sqlite3.Database('./persistence/discbot.db', sqlite3.OPEN_READWRITE
   log(chalkThemes.setup("Connected"))
 });
 
-export async function updateCooldown(user, field, unixCooldown) {
+export async function updateUserCooldown(user, field, unixCooldown) {
   db.run(`UPDATE 'cooldowns' SET ${field} = '${unixCooldown}' WHERE userId = '${user.userId}'`, function (value, err) {
     if (err) {
       return console.error(err.message);
@@ -64,12 +61,7 @@ export async function getUserFromDb(userId, guildId) {
         return console.error(err.message);
       }
       if (row) {
-        let user = new DiscordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
-        for (const [key, value] of Object.entries(Actions)) {
-          user.cooldowns[value.fieldName] = row[value.fieldName];
-        }
-
-        resolve(user);
+        resolve(row);
       } else {
         resolve(null);
       }
@@ -77,10 +69,10 @@ export async function getUserFromDb(userId, guildId) {
   })
 }
 
-export async function getRichestUsers(interaction) {
+export async function getRichestUsers(guildId) {
   return new Promise(function (resolve, reject) {
     log(`Retreiving richest users`);
-    let sql = `select name, cash from users where discordguildid = '${interaction.guild.id}'  order by cash desc limit 15`;
+    let sql = `select name, cash from users where discordguildid = '${guildId}'  order by cash desc limit 15`;
     db.all(sql, function (err, rows) {
       if (err) {
         reject(console.error(err.message));
@@ -92,6 +84,7 @@ export async function getRichestUsers(interaction) {
 
 
 // GUILD ACTIONS
+
 export async function getGuilds() {
   return new Promise(function (resolve, reject) {
     let sql = `SELECT cast(id as text) as id, name, coinEmote, bank
@@ -117,8 +110,7 @@ export async function getGuildFromDb(guildId) {
         return console.error(err.message);
       }
       if (row) {
-        let guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
-        resolve(guild);
+        resolve(row);
       } else {
         resolve(null);
       }
@@ -149,6 +141,7 @@ export async function updateGuildCoin(guild, emote) {
     }
   });
 }
+
 export async function updateGuildBank(guild, amount) {
   const totalAmount = guild.bank + amount;
   log(`Adding ${totalAmount} to guild ${guild.name}`)

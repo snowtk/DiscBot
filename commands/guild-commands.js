@@ -1,14 +1,13 @@
 import { EmbedBuilder } from "discord.js";
+import { DiscordGuild } from "../models/discord-guild.js";
+import { DiscordUser } from "../models/discord-user.js";
 import { Color } from "../models/enums.js";
 import { addCashToGuildBank, generateAddCashToBankMessage } from "../models/skills/add-cash-to-guild-bank.js";
-import * as db from '../persistence/dbManager.js';
-import { RepositoryHandler } from "../persistence/repository.js";
-const repo = new RepositoryHandler().getInstance();
 
 export const addCashToGuild = async (interaction) => {
     const amount = interaction.options.getInteger('amount');
-    const giver = await repo.getUser(interaction.user.id, interaction.guild.id, interaction);
-    const guild = await repo.getGuild(interaction.guild.id);
+    const giver = await DiscordUser.getUser(interaction.user.id, interaction.guild.id, interaction);
+    const guild = await DiscordGuild.getGuild(interaction.guild.id);
 
     let message = addCashToGuildBank(giver, guild, amount) ?
         `${giver.interaction.user.toString()} has given ${amount} ${guild.coinEmote} to ${guild.name}` :
@@ -19,8 +18,8 @@ export const addCashToGuild = async (interaction) => {
 }
 
 export const guildsTopRich = async (interaction) => {
-    const activeGuild = await repo.getGuild(interaction.guild.id)
-    const guildsList = await db.getRichestGuilds(interaction);
+    const activeGuild = await DiscordGuild.getGuild(interaction.guild.id);
+    const guildsList = await DiscordGuild.getRichestGuilds();
     const list = [];
     for (var i = 0; i < guildsList.length; i++) {
         const guild = guildsList[i]
@@ -37,7 +36,7 @@ export const guildsTopRich = async (interaction) => {
 }
 
 export const getGuildProfile = async (interaction) => {
-    const guild = await repo.getGuild(interaction.guild.id)
+    const guild = await DiscordGuild.getGuild(interaction.guild.id)
     const description = guild.getGuildProfileInformation();
     const avatar = interaction.guild.iconURL({ size: 32, dynamic: true });
 

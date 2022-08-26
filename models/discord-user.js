@@ -1,10 +1,13 @@
-import * as db from '../persistence/dbManager.js'
+import { Repository } from "../persistence/repository.js";
 import { Actions } from './enums.js'
 import * as logger from '../shared/logger.js'
 import * as chalkThemes from '../shared/chalkThemes.js'
 import { begging } from './skills/begging.js'
 import { getUnixTime, HOUR_IN_SECONDS } from '../shared/utils.js'
 import { giveCash } from './skills/give-cash.js'
+
+
+var repo = new Repository();
 
 export class DiscordUser {
 
@@ -29,14 +32,14 @@ export class DiscordUser {
     addCash(cash) {
         if (cash <= 0) return;
         this.log(`Adding ${cash} coins to ${this.name}, ${this.cash} + ${cash} = ${this.cash + cash}`);
-        db.addCashToUser(this, cash);
+        repo.addCashToUser(this, cash);
         this.cash += cash;
     }
 
     removeCash(cash) {
         if (cash <= 0) return;
         this.log(`Removing ${cash} coins from ${this.name}, ${this.cash} - ${cash} = ${this.cash - cash}`);
-        db.addCashToUser(this, 0 - cash);
+        repo.addCashToUser(this, 0 - cash);
         this.cash -= cash;
     }
 
@@ -57,7 +60,7 @@ export class DiscordUser {
         }
         const extraTime = getUnixTime() - time; //time difference in seconds
         const extraHours = extraTime / HOUR_IN_SECONDS;
-        const cashToAdd = this.#calculateCashToAdd(extraHours)
+        const cashToAdd = this.#calculateCashToAdd(extraHours);
         this.addCash(Math.round(cashToAdd));
         this.updateCooldown(Actions.chatActivity)
         return;
@@ -67,13 +70,12 @@ export class DiscordUser {
     #calculateCashToAdd(extraHours) {
         const cooldownTime = Actions.chatActivity.cooldown / HOUR_IN_SECONDS;
         const extraHoursSum = extraHours + cooldownTime;
-
-        return (10 * extraHours) / (1 + 0.08 * extraHoursSum)
+        return (10 * extraHoursSum) / (1 + 0.08 * extraHoursSum);
     }
 
     updateCooldown(action) {
         this.cooldowns[action.fieldName] = getUnixTime() + action.cooldown;
-        db.updateCooldown(this, action.fieldName, getUnixTime() + action.cooldown);
+        repo.updateUserCooldown(this, action.fieldName, getUnixTime() + action.cooldown);
     }
 
     canAct(field) {
@@ -107,11 +109,7 @@ export class DiscordUser {
         return content.join('\n');
     }
 
-    static async getUserFromDb(userId, guildId) {
-        return await db.getUserFromDb(userId, guildId)
-    }
-
-    static async registerUser(userId, username, guildId) {
-        return await db.registerUser(userId, username, guildId);
+    static async getUser(userId, guildId, interaction) {
+        return await repo.getUser(userId, guildId, interaction);
     }
 }
