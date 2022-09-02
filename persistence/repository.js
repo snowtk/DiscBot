@@ -4,7 +4,6 @@ import * as chalkThemes from "../shared/chalkThemes.js";
 import { Cache } from './cache/cache-handler.js';
 import { getUnixTime } from '../shared/utils.js';
 import { DiscordGuild } from '../models/discord-guild.js';
-import { DiscordUser } from '../models/discord-user.js';
 
 function log(message, ...params) {
     logger.log(chalkThemes.error(message), ...params);
@@ -21,9 +20,9 @@ async function call(func, ...params) {
         log(`${func.name} not implemented in the database connection`)
     }
 };
-let instance = null;
+ let instance = null;
 
-export class Repository {
+class Repository {
 
     constructor() {
         if (instance) {
@@ -44,12 +43,10 @@ export class Repository {
         let guild = this.cache.getGuildFromCache(guildId);
 
         if (!guild) {
-            let row = await call(db.getGuildFromDb, guildId);
-            guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
+            guild = await call(db.getGuildFromDb, guildId);
             if (!guild) {
                 let guildObj = client.guilds.cache.find(x => x.id = guildId);
-                let row = await call(db.registerGuild, guildObj);
-                guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
+                guild = await call(db.registerGuild, guildObj);
                 this.log(`Registring Guild ${guildId} to DB`);
             } else {
                 this.log(`Getting Guild ${guild.name} from DB`);
@@ -85,11 +82,7 @@ export class Repository {
         let user = this.cache.getUserFromCache(userId, guildId)
 
         if (!user) {
-            row = await call(db.getUserFromDb, userId, guildId);
-            user = new DiscordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
-            for (const [key, value] of Object.entries(Actions)) {
-                user.cooldowns[value.fieldName] = row[value.fieldName];
-            }
+            user = await call(db.getUserFromDb, userId, guildId);
             if (!user) {
                 user = await call(db.registerUser, userId, username, guildId);
                 this.log(`Registring ${user.name} to DB`);
@@ -110,7 +103,7 @@ export class Repository {
     }
 
     async updateUserCooldown(user, fieldName, unixCooldown) {
-        call(db.updateGuildBank, user, fieldName, unixCooldown);
+        call(db.updateUserCooldown, user, fieldName, unixCooldown);
     }
 
     //#endregion
@@ -136,3 +129,5 @@ export class Repository {
     }
 
 }
+
+export var repo = new Repository();

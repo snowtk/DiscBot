@@ -1,13 +1,10 @@
-import { Repository } from "../persistence/repository.js";
+import { repo } from "../persistence/repository.js";
 import { Actions } from './enums.js'
 import * as logger from '../shared/logger.js'
 import * as chalkThemes from '../shared/chalkThemes.js'
 import { begging } from './skills/begging.js'
 import { getUnixTime, HOUR_IN_SECONDS } from '../shared/utils.js'
 import { giveCash } from './skills/give-cash.js'
-
-
-var repo = new Repository();
 
 export class DiscordUser {
 
@@ -70,6 +67,7 @@ export class DiscordUser {
     #calculateCashToAdd(extraHours) {
         const cooldownTime = Actions.chatActivity.cooldown / HOUR_IN_SECONDS;
         const extraHoursSum = extraHours + cooldownTime;
+        this.log(`${this.name}: Activity reward for ${extraHoursSum}h of inactivity`)
         return (10 * extraHoursSum) / (1 + 0.08 * extraHoursSum);
     }
 

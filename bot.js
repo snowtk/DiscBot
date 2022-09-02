@@ -1,4 +1,4 @@
-import { Repository } from './persistence/repository.js'
+import { repo } from './persistence/repository.js'
 import dotenv from 'dotenv'
 import * as expressServer from "./server.js"
 import { Client } from 'discord.js'
@@ -8,9 +8,6 @@ import * as logger from './shared/logger.js'
 import * as chalkThemes from './shared/chalkThemes.js'
 
 dotenv.config()
-
-setMaxListeners(100);
-const repo = new Repository();
 
 function log(message, ...params) {
   logger.log(chalkThemes.main(message), ...params);

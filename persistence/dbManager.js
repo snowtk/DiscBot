@@ -1,6 +1,9 @@
 import sqlite3 from 'sqlite3';
+import { DiscordUser } from '../models/discord-user.js'
+import { Actions } from '../models/enums.js';
 import * as chalkThemes from '../shared/chalkThemes.js'
 import * as logger from '../shared/logger.js'
+import { DiscordGuild } from '../models/discord-guild.js';
 import { RoleStore } from '../models/store.js';
 
 function log(message, ...params) {
@@ -61,7 +64,12 @@ export async function getUserFromDb(userId, guildId) {
         return console.error(err.message);
       }
       if (row) {
-        resolve(row);
+        let user = new DiscordUser(row.id, row.userId, row.guildId, row.name, row.cash, null);
+        for (const [key, value] of Object.entries(Actions)) {
+          user.cooldowns[value.fieldName] = row[value.fieldName];
+        }
+
+        resolve(user);
       } else {
         resolve(null);
       }
@@ -110,7 +118,8 @@ export async function getGuildFromDb(guildId) {
         return console.error(err.message);
       }
       if (row) {
-        resolve(row);
+        let guild = new DiscordGuild(row.id, row.name, row.coinEmote, null, row.bank);
+        resolve(guild);
       } else {
         resolve(null);
       }

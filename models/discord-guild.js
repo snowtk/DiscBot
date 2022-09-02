@@ -1,7 +1,6 @@
-import { Repository } from "../persistence/repository.js";
+import { repo } from "../persistence/repository.js";
 
 const defaultCoinName = 'coins'
-var repo = new Repository();
 
 export class DiscordGuild {
     constructor(id, name, coinEmote = 'coins', guild = null, bank = 0) {
@@ -42,7 +41,7 @@ export class DiscordGuild {
     }
 
     async getTopRichestUsers(){
-        return await repo.getTopRichestUsers(this.id);
+        return await repo.getTopRichest(this.id);
     }
 
     static async getGuild(guildId){
